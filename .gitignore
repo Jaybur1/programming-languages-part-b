@@ -2,3 +2,4 @@
 **/*.rkt~
 **/compiled/*
 playground.rkt
+**/section*/*
