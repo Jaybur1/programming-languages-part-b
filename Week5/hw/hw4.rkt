@@ -22,6 +22,9 @@
 ; list of strings. Each element of the output should be the corresponding element of the input appended
 ; with suffix (with no extra space between the element and suffix). You must use Racket-library
 ; functions map and string-append. Sample solution: 2 lines.
+(define (string-append-map xs suffix)
+    (map (lambda (x) (string-append x suffix)) xs))
+
 ; 3. Write a function list-nth-mod that takes a list xs and a number n. If the number is negative,
 ; terminate the computation with (error "list-nth-mod: negative number"). Else if the list is
 ; empty, terminate the computation with (error "list-nth-mod: empty list"). Else return the i
@@ -30,18 +33,30 @@
 ; list’s length. Library functions length, remainder, car, and list-tail are all useful – see the Racket
 ; documentation. Sample solution is 6 lines.
 
-(define (string-append-map xs suffix)
-    (map (lambda (x) (string-append x suffix)) xs))
+(define (list-nth-mod xs n)
+    (cond [(< n 0) (error "list-nth-mod: negative number")]
+          [(null? xs) (error "list-nth-mod: empty list")]
+          [#t (car (list-tail xs (remainder n (length xs))))]))
 
 ; 4. Write a function stream-for-n-steps that takes a stream s and a number n. It returns a list holding
 ; the first n values produced by s in order. Assume n is non-negative. Sample solution: 5 lines. Note:
 ; You can test your streams with this function instead of the graphics code.
-
+(define (stream-for-n-steps s n)
+    (if (= n 0)
+        null
+        (cons (car (s)) (stream-for-n-steps (cdr (s)) (- n 1)))))
 
 ; 5. Write a stream funny-number-stream that is like the stream of natural numbers (i.e., 1, 2, 3, ...)
 ; except numbers divisble by 5 are negated (i.e., 1, 2, 3, 4, -5, 6, 7, 8, 9, -10, 11, ...). Remember a stream
 ; is a thunk that when called produces a pair. Here the car of the pair will be a number and the cdr will
 ; be another stream.
+
+(define funny-number-stream
+    (letrec ([f (lambda (x)
+                (if (= 0 (remainder x 5))
+                (cons (* -1 x) (lambda () (f (+ x 1))))
+                (cons x (lambda () (f (+ x 1))))))])
+    (lambda () (f 1))))
 
 
 ; 6. Write a stream dan-then-dog, where the elements of the stream alternate between the strings "dan.jpg"
@@ -49,6 +64,12 @@
 ; when called produces a pair of "dan.jpg" and a thunk that when called produces a pair of "dog.jpg"
 ; and a thunk that when called... etc. Sample solution: 4 lines.
 
+(define dan-then-dog
+    (letrec ([f (lambda (x)
+                (if (string=? x "dan.jpg")
+                (cons "dan.jpg" (lambda () (f "dog.jpg")))
+                (cons "dog.jpg" (lambda () (f "dan.jpg")))))])
+    (lambda () (f "dan.jpg"))))
 
 ; 7. Write a function stream-add-zero that takes a stream s and returns another stream. If s would
 ; produce v for its i
@@ -58,6 +79,8 @@
 ; Note: One of the provided tests in the file using graphics uses (stream-add-zero dan-then-dog)
 ; with place-repeatedly.
 
+(define (stream-add-zero s) 
+    (lambda () (cons (cons 0 (car (s))) (stream-add-zero (cdr (s))))))
 
 ; 8. Write a function cycle-lists that takes two lists xs and ys and returns a stream. The lists may or
 ; may not be the same length, but assume they are both non-empty. The elements produced by the
@@ -70,6 +93,10 @@
 ; itself with (+ n 1) inside a thunk.
 ; 2
 
+(define (cycle-lists xs ys)
+    (letrec ([f (lambda (n1 n2) 
+                (cons (cons  (list-nth-mod xs n1) (list-nth-mod ys n2)) (lambda () (f (+ n1 1) (+ n2 1)))))])
+    (lambda () (f 0 0))))
 
 ; 9. Write a function vector-assoc that takes a value v and a vector vec. It should behave like Racket’s
 ; assoc library function except (1) it processes a vector (Racket’s name for an array) instead of a list,
