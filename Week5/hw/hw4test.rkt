@@ -11,7 +11,7 @@
 
 ;; Helper functions
 (define ones (lambda () (cons 1 ones)))
-; (define a 2)
+(define a 2)
 
 (define tests
   (test-suite
@@ -47,11 +47,11 @@
    ; vector-assoc test
    (check-equal? (vector-assoc 4 (vector (cons 2 1) (cons 3 1) (cons 4 1) (cons 5 1))) (cons 4 1) "vector-assoc test")
    
-  ;  ; cached-assoc tests
-  ;  (check-equal? ((cached-assoc (list (cons 1 2) (cons 3 4)) 3) 3) (cons 3 4) "cached-assoc test")
+   ; cached-assoc tests
+   (check-equal? ((cached-assoc (list (cons 1 2) (cons 3 4)) 3) 3) (cons 3 4) "cached-assoc test")
    
-  ;  ; while-less test
-  ;  (check-equal? (while-less 7 do (begin (set! a (+ a 1)) a)) #t "while-less test")
+   ; while-less test
+   (check-equal? (while-less 7 do (begin (set! a (+ a 1)) a)) #t "while-less test")
    
    ))
 

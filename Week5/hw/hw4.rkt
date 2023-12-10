@@ -134,7 +134,18 @@
 ; • To test your cache, it can be useful to add print expressions so you know when you are using the
 ; cache and when you are not. But remove these print expressions before submitting your code.
 ; • Sample solution is 15 lines.
-
+(define (cached-assoc xs n)
+  (letrec ([memo (make-vector n #f)]
+           [iter 0]
+           [f (lambda (val)
+               (let ([ans (vector-assoc val memo)])
+                 (if ans
+                     (cdr ans)
+                     (let ([new-ans (assoc val xs)])
+                       (begin (vector-set! memo iter (cons val new-ans))
+                              (set! iter (if (= (+ 1 iter) n) 0 (+ iter 1)))
+                                    new-ans)))))])
+    (lambda (v) (f v))))
 
 ; 11. (Challenge Problem:) Define a macro that is used like (while-less e1 do e2) where e1 and e2
 ; are expressions and while-less and do are syntax (keywords). The macro should do the following:
@@ -150,3 +161,16 @@
 ; (while-less 7 do (begin (set! a (+ a 1)) (print "x") a))
 ; Evaluating the second line will print "x" 5 times and change a to be 7. So evaluating the third line
 ; will print "x" 1 time and change a to be 8.
+
+(define-syntax while-less
+  (syntax-rules (do)
+    [(while-less e1 do e2)
+     (letrec
+         ([x e1]
+         [f (lambda ()
+              (if (< e2 x)
+                  (begin (+ x 1)
+                         e2
+                         (f))
+                  #t))])
+       (f))]))
