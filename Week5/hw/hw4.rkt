@@ -30,6 +30,8 @@
 ; list’s length. Library functions length, remainder, car, and list-tail are all useful – see the Racket
 ; documentation. Sample solution is 6 lines.
 
+(define (string-append-map xs suffix)
+    (map (lambda (x) (string-append x suffix)) xs))
 
 ; 4. Write a function stream-for-n-steps that takes a stream s and a number n. It returns a list holding
 ; the first n values produced by s in order. Assume n is non-negative. Sample solution: 5 lines. Note:
