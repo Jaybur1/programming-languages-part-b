@@ -105,7 +105,14 @@
 ; vector-length, vector-ref, and equal?. Return #f if no vector element is a pair with a car field
 ; equal to v, else return the first pair with an equal car field. Sample solution is 9 lines, using one local
 ; recursive helper function.
-
+(define (vector-assoc v vec)
+    (letrec ([f (lambda (n)
+                (cond [(= n (vector-length vec)) #f]
+                      [(not (pair? (vector-ref vec n))) (f (+ n 1))]
+                      [(equal? (car (vector-ref vec n)) v) (vector-ref vec n)]
+                      [#t (f (+ n 1))])
+             )])
+    (f 0) ))
 
 ; 10. Write a function cached-assoc that takes a list xs and a number n and returns a function that takes
 ; one argument v and returns the same thing that (assoc v xs) would return. However, you should
