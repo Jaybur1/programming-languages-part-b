@@ -21,8 +21,20 @@
 (struct closure (env fun) #:transparent) 
 
 ;; Problem 1
-
-;; CHANGE (put your solutions here)
+; (a) Write a Racket function racketlist->mupllist that takes a Racket list (presumably of mupl
+; values but that will not affect your solution) and produces an analogous mupl list with the same
+; elements in the same order.
+(define (racketlist->mupllist rktlst)
+  (cond ((null? rktlst) (aunit))
+        ((list? rktlst) (apair (car rktlst) (racketlist->mupllist (cdr rktlst))))
+        (#t (error "wrong argument"))))
+; (b) Write a Racket function mupllist->racketlist that takes a mupl list (presumably of mupl
+; values but that will not affect your solution) and produces an analogous Racket list (of mupl
+; values) with the same elements in the same order.
+(define (mupllist->racketlist mupllst)
+  (cond ((aunit? mupllst) null)
+        ((apair? mupllst) (cons (apair-e1 mupllst) (mupllist->racketlist (apair-e2 mupllst))))
+        (#t (error "wrong argument"))))
 
 ;; Problem 2
 
@@ -49,6 +61,67 @@
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
         ;; CHANGE add more cases here
+        [(int? e) e]
+        [(closure? e) e]
+        [(aunit? e) e]
+        [(isaunit? e) 
+          (if (aunit? (eval-under-env (isaunit-e e) env)) 
+              (int 1) 
+              (int 0))
+        ]
+        [(fun? e) (closure env e)]
+        [(ifgreater? e)
+         (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
+               [v2 (eval-under-env (ifgreater-e2 e) env)])
+               (if (and (int? v1) (int? v2))
+                   (if (> (int-num v1) (int-num v2))
+                       (eval-under-env (ifgreater-e3 e) env)
+                       (eval-under-env (ifgreater-e4 e) env))
+                   ((error "MUPL ifgreater applied to non-number"))
+                )
+          )
+        ]
+        [(mlet? e)
+          (let ([v (eval-under-env (mlet-e e) env)])
+               (eval-under-env (mlet-body e) (cons (cons (mlet-var e) v) env)))
+        ]
+        [(call? e)
+          (let* ((clo (eval-under-env (call-funexp e) env))
+                 (arg (eval-under-env (call-actual e) env))
+                 (f (cond ((closure? clo)(closure-fun clo))
+                          (error "MUPL call applied to non-closure")))
+                 (env-temp (cons (cons (fun-formal f) arg) (closure-env clo)))
+                 (env (cond [(equal? (fun-nameopt f) #f) env-temp]
+                            [#t (cons (cons (fun-nameopt f) clo) env-temp)]))
+                )
+                (eval-under-env (fun-body f) env)
+          )
+        ]
+        [(apair? e)
+          (apair (eval-under-env(apair-e1 e) env)
+                 (eval-under-env(apair-e2 e) env)
+          )
+        ]
+        [(fst? e)
+          (let ([v (eval-under-env(fst-e e) env)])
+               (cond ((apair? v) (apair-e1 v))
+                     (#t (error "MUPL fst applied to non-apair")))
+          )
+        ]
+        [(snd? e)
+          (let ([v (eval-under-env(snd-e e) env)])
+               (cond ((apair? v) (apair-e2 v))
+                     (#t (error "MUPL snd applied to non-apair")))
+          
+          )
+        ]
+        [(isaunit? e)
+          (let ([v (eval-under-env(isaunit-e e) env)])
+               (cond ((aunit? v) (int 1))
+                     (#t (int 0))
+               )
+          )
+        ]
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
@@ -56,20 +129,70 @@
   (eval-under-env e null))
         
 ;; Problem 3
+; (a) Write a Racket function ifaunit that takes three mupl expressions e1, e2, and e3. It returns a
+; mupl expression that when run evaluates e1 and if the result is mupl’s aunit then it evaluates e2
+; and that is the overall result, else it evaluates e3 and that is the overall result. Sample solution:
+; 1 line.
 
-(define (ifaunit e1 e2 e3) "CHANGE")
-
-(define (mlet* lstlst e2) "CHANGE")
-
-(define (ifeq e1 e2 e3 e4) "CHANGE")
+(define (ifaunit e1 e2 e3)
+  (ifgreater (isaunit e1) (int 0) e2 e3))
+; (b) Write a Racket function mlet* that takes a Racket list of Racket pairs ’((s1 . e1) . . . (si
+; . ei)
+; . . . (sn . en)) and a final mupl expression en+1. In each pair, assume si
+; is a Racket string and
+; ei
+; is a mupl expression. mlet* returns a mupl expression whose value is en+1 evaluated in an
+; environment where each si
+; is a variable bound to the result of evaluating the corresponding ei
+; for 1 ≤ i ≤ n. The bindings are done sequentially, so that each ei
+; is evaluated in an environment
+; where s1 through si−1 have been previously bound to the values e1 through ei−1.
+(define (mlet* lstlst e2)
+  (if (null? lstlst)
+      e2
+      (let ([v (car lstlst)])
+           (mlet (car v) (cdr v) (mlet* (cdr lstlst) e2))
+      )
+  )
+)
+; (c) Write a Racket function ifeq that takes four mupl expressions e1, e2, e3, and e4 and returns
+; a mupl expression that acts like ifgreater except e3 is evaluated if and only if e1 and e2 are
+; equal integers. Assume none of the arguments to ifeq use the mupl variables _x or _y. Use this
+; assumption so that when an expression returned from ifeq is evaluated, e1 and e2 are evaluated
+; exactly once each.
+(define (ifeq e1 e2 e3 e4)
+  (mlet "_x" e1
+    (mlet "_y" e2
+      (if (equal? (var "_x") (var "_y"))
+          e3
+          e4
+      )
+    )
+  )
+)
 
 ;; Problem 4
 
-(define mupl-map "CHANGE")
+(define mupl-map
+  (fun #f "fx"
+       (fun "map" "list"
+            (ifaunit (var "list") 
+                     (aunit)
+                     (apair (call (var "fx") (fst (var "list")))
+                            (call (var "map") (snd (var "list"))))
+            )
+        )
+  )
+)
+            
 
 (define mupl-mapAddN 
   (mlet "map" mupl-map
-        "CHANGE (notice map is now in MUPL scope)"))
+        (fun #f "i"
+             (call (var "map") (fun #f "x" (add (var "x") (var "i"))))
+        )
+  )
+)
 
 ;; Challenge Problem
 
